@@ -32,6 +32,7 @@ const server = https.createServer(options, function(req, res) {
   });
 });
 
-server.listen(PORT, (port) => {
+console.log(`Starting server on port ${PORT}`);
+server.listen(PORT, () => {
   console.log(`Traffic server running on port ${PORT}`);
 });
