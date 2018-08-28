@@ -5,12 +5,13 @@ const httpProxy = require('http-proxy');
 
 const proxy = httpProxy.createProxyServer({});
 const options = {
-    key: fs.readFileSync('./ssl/localhost.key'),
-    cert: fs.readFileSync('./ssl/localhost.crt'),
-    requestCert: false,
-    rejectUnauthorized: false
-  };
+  key: fs.readFileSync('./ssl/localhost.key'),
+  cert: fs.readFileSync('./ssl/localhost.crt'),
+  requestCert: false,
+  rejectUnauthorized: false
+};
 
+const PORT = process.env.port || 5050;
 const server = https.createServer(options, function(req, res) {
 
   const uri = url.parse(req.url, true);
@@ -31,6 +32,6 @@ const server = https.createServer(options, function(req, res) {
   });
 });
 
-server.listen(process.env.port || 5050, (port) => {
+server.listen(PORT, (port) => {
   console.log(`Traffic server running on port ${PORT}`);
 });
