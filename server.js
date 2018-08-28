@@ -31,6 +31,6 @@ const server = https.createServer(options, function(req, res) {
   });
 });
 
-server.listen(process.env.PORT || 5050, (port) => {
+server.listen(process.env.port || 5050, (port) => {
   console.log(`Traffic server running on port ${PORT}`);
 });
