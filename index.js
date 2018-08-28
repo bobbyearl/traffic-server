@@ -3,8 +3,6 @@ const url = require('url');
 const https = require('https');
 const httpProxy = require('http-proxy');
 
-const PORT = 5050;
-
 const proxy = httpProxy.createProxyServer({});
 const options = {
     key: fs.readFileSync('./ssl/localhost.key'),
@@ -33,6 +31,6 @@ const server = https.createServer(options, function(req, res) {
   });
 });
 
-server.listen(PORT, (port) => {
+server.listen(process.env.PORT || 5050, (port) => {
   console.log(`Traffic server running on port ${PORT}`);
 });
