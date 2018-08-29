@@ -16,6 +16,10 @@ const requestHandler = (request, response) => {
     return response.end('Traffic, nice.');
   }
 
+  if (uri.pathname === '/favicon.ico') {
+    return response.end();
+  }
+
   const origin = decodeURIComponent(uri.query['origin']);
   const directory = decodeURIComponent(uri.query['directory']);
   response.setHeader('Access-Control-Allow-Origin', '*');
