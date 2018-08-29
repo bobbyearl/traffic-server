@@ -4,7 +4,7 @@ const http = require('http');
 const https = require('https');
 const httpProxy = require('http-proxy');
 
-const isProduction = !!process.env.WEBSITE_HOSTNAME;
+const isProduction = !!process.env.ENVIRONMENT;
 const PORT = process.env.port || 5050;
 const proxy = httpProxy.createProxyServer({});
 
