@@ -11,7 +11,7 @@ const options = {
   rejectUnauthorized: false
 };
 
-const PORT = process.env.port || 5050;
+const PORT = process.env.PORT || 5050;
 const server = https.createServer(options, function(req, res) {
 
   const uri = url.parse(req.url, true);
