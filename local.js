@@ -1,16 +1,23 @@
 const fs = require('fs-extra');
 const url = require('url');
-const http = require('http');
+const https = require('https');
 const httpProxy = require('http-proxy');
 
-const PORT = process.env.port || 5050;
 const proxy = httpProxy.createProxyServer({});
-const server = http.createServer(function(req, res) {
+const options = {
+  key: fs.readFileSync('./ssl/localhost.key'),
+  cert: fs.readFileSync('./ssl/localhost.crt'),
+  requestCert: false,
+  rejectUnauthorized: false
+};
+
+const PORT = process.env.port || 5050;
+const server = https.createServer(options, function(req, res) {
 
   const uri = url.parse(req.url, true);
 
   // Shortcircuit test
-  if (uri.pathname === '/ping') {
+  if (uri.pathname === '/') {
     return res.end('Traffic, nice.');
   }
 
