@@ -1,57 +1,64 @@
+const express = require('express')
+const thumbnailGenerator = require('hls-live-thumbnails').ThumbnailGenerator;
+const path = require('path');
 const fs = require('fs-extra');
-const url = require('url');
-const http = require('http');
-const https = require('https');
-const httpProxy = require('http-proxy');
+const glob = require('glob');
 
-const isProduction = !!process.env.ENVIRONMENT;
-const PORT = process.env.PORT || 5050;
-const proxy = httpProxy.createProxyServer({});
+const feeds = require('./feeds/cameras-2018-08-26.json');
+const PORT = process.env.PORT || 5000;
 
-const requestHandler = (request, response) => {
-  const uri = url.parse(request.url, true);
-
-  // Shortcircuit test
-  if (uri.pathname === '/ping') {
-    return response.end('Traffic, nice.');
-  }
-
-  if (uri.pathname === '/favicon.ico') {
-    return response.end();
-  }
-
-  const origin = decodeURIComponent(uri.query['origin']);
-  const directory = decodeURIComponent(uri.query['directory']);
-  response.setHeader('Access-Control-Allow-Origin', '*');
-
-  // Initial request, just change target to server.
-  // All subsequent requests (come to root), change target to prefix.
-  proxy.web(request, response, { 
-    target: uri.pathname.indexOf('rtplive') > -1 ? origin : (origin + directory)
+function generateThumb(id, request, response) {
+  const feature = feeds.features.find(feature => feature.id === id);
+  const thumbs = new thumbnailGenerator({
+    playlistUrl: feature.properties.http_url,
+    outputDir: './thumbs',
+    tempDir: './thumbs-tmp',
+    initialThumbnailCount: 1,
+    thumbnailWidth: request.query['w'] || 360,
   });
-};
 
-// Azure doesn't need SSL
-const getServer = () => {
+  const emitter = thumbs.getEmitter();
 
-  if (isProduction) {
-    return http.createServer(requestHandler);
-  }
+  emitter.on('newThumbnail', (thumb) => {
+    thumbs.destroy();
+    const ts = (new Date()).getTime();
+    const file = `./thumbs-by-id/${id}/${ts}-${thumb.name}`;
 
-  return https.createServer(
-    {
-      key: fs.readFileSync('./ssl/localhost.key'),
-      cert: fs.readFileSync('./ssl/localhost.crt'),
-      requestCert: false,
-      rejectUnauthorized: false
-    },
-    requestHandler
-  );
-};
+    fs.copySync(`./thumbs/${thumb.name}`, file);
+    response.sendFile(path.resolve(file));
+  });
 
-const server = getServer();
+  emitter.on('error', () => {
+    thumbs.destroy();
+    response.send('Error generating thumbnail');      
+  });
+}
 
-server.listen(PORT, () => {
-  console.log('Production:', isProduction);
-  console.log(server.address());
-});
+express()
+  .get('/thumbnail/:id', (request, response) => {
+    const id = request.params.id;
+    const latest = glob.sync(`./thumbs-by-id/${id}/*`)
+      .sort()
+      .pop();
+
+    if (latest) {
+      const ts = (new Date()).getTime();
+      const tsFile = path.basename(latest, path.extname(latest))
+        .split('-')
+        .shift();
+      const age = ts - tsFile;
+
+      if (age < 60000) {
+        console.log(`Sent cached file.`, id, latest, age);
+        response.sendFile(path.resolve(latest));
+      } else {
+        console.log(`Cache out of date.`, id, latest, age);
+        generateThumb(id, request, response);
+      }
+
+    } else {
+      console.log('No cache exists', id);
+      generateThumb(id, request, response);
+    }
+  })
+  .listen(PORT, () => console.log(`Listening on ${ PORT }`))
