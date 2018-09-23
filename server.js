@@ -61,4 +61,7 @@ express()
       generateThumb(id, request, response);
     }
   })
+  .get('*', (response, request) => {
+    request.send(`These aren't the droids you're looking for.`);
+  })
   .listen(PORT, () => console.log(`Listening on ${ PORT }`))
